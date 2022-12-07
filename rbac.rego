@@ -1,89 +1,80 @@
-# Role-based Access Control (RBAC)
-# --------------------------------
-#
-# This example defines an RBAC model for a Pet Store API. The Pet Store API allows
-# users to look at pets, adopt them, update their stats, and so on. The policy
-# controls which users can perform actions on which resources. The policy implements
-# a classic Role-based Access Control model where users are assigned to roles and
-# roles are granted the ability to perform some action(s) on some type of resource.
-#
-# This example shows how to:
-#
-#	* Define an RBAC model in Rego that interprets role mappings represented in JSON.
-#	* Iterate/search across JSON data structures (e.g., role mappings)
-#
-# For more information see:
-#
-#	* Rego comparison to other systems: https://www.openpolicyagent.org/docs/latest/comparison-to-other-systems/
-#	* Rego Iteration: https://www.openpolicyagent.org/docs/latest/#iteration
+package authz
 
-package app.rbac
+import future.keywords.if
+import future.keywords.in
 
-# import data.utils
-
-# By default, deny requests
+# Default is to deny
 default allow = false
 
-# Allow admins to do anything
-allow {
-	user_is_admin
+allow if {
+	has_global_rights
 }
 
-# Allow bob to do anything
-#allow {
-#	input.user == "bob"
-#}
-
-# you can ignore this rule, it's simply here to create a dependency
-# to another rego policy file, so we can demonstate how to work with
-# an explicit manifest file (force order of policy loading).
-#allow {
-#	input.matching_policy.grants
-#	input.roles
-#	utils.hasPermission(input.matching_policy.grants, input.roles)
-#}
-
-# Allow the action if the user is granted permission to perform the action.
-allow {
-	# Find permissions for the user.
-	some permission
-	user_is_granted[permission]
-
-	# Check if the permission permits the action.
-	input.action == permission.action
-	input.type == permission.type
-
-	# unless user location is outside US
-	country := data.users[input.user].location.country
-	country == "US"
+allow if {
+	input.path[0] == "application"
+	has_correct_role
 }
 
-# user_is_admin is true if...
-user_is_admin {
-	# for some `i`...
-	some i
-
-	# "admin" is the `i`-th element in the user->role mappings for the identified user.
-	data.users[input.user].roles[i] == "admin"
+allow if {
+	input.path[0] == "application"
+	is_creator
 }
 
-# user_is_viewer is true if...
-user_is_viewer {
-	# for some `i`...
-	some i
+allow if {
+	input.path[0] == "application"
 
-	# "viewer" is the `i`-th element in the user->role mappings for the identified user.
-	data.users[input.user].roles[i] == "viewer"
+	#application is in the correct status
+	can_review
+
+	# The file is not a draft
+	not draft
+
+	# The file is official
+	official_file
 }
 
-# user_is_granted is a set of permissions for the user identified in the request.
-# The `permission` will be contained if the set `user_is_granted` for every...
-user_is_granted[permission] {
-	some i, j
-
-	# `role` assigned an element of the user_roles for this user...
-	role := data.users[input.user].roles[i]
-
-	# `permission` assigned a single permission from the permissions list for 'role'...
-	permission := data.role_permissions[role][j]
+is_creator if {
+	input.userId == data.applications[input.path[1]].creator
 }
+
+can_review if {
+	app := data.applications[input.path[1]]
+	app.reviewers[input.userId]
+	app.status in {500, 550, 600, 700, 800, 1200, 1250}
+}
+
+has_global_rights if {
+	# Check roles
+	some role in data.roles[input.userId].roles
+	role.name == "admin"
+
+	# tenantId == null means global role
+	role.tenantId == null
+}
+
+has_correct_role if {
+	# Check roles
+	some role in data.roles[input.userId].roles
+	role.name == "admin"
+
+	# The role is tied to the correct tenant
+	role.tenantId == input.tenantId
+
+	# The action is set to allow
+	data.tenants[input.tenantId].rules[role.name][input.action]
+}
+
+draft if {
+	input.path[2] == "files"
+	data.applications[input.path[1]].files[input.path[3]].draft
+}
+
+official_file if {
+	input.path[2] == "files"
+	data.applications[input.path[1]].files[input.path[3]].official
+}
+
+# Debug
+debugRoles := data.roles[input.userId]
+
+debugApplication := data.applications[input.path[1]]
