@@ -30,7 +30,7 @@
   },
   "roles": {
     "eric": { "roles": [{ "name": "admin", "tenantId": null }] },
-    "frank": { "roles": [{ "name": "admin", "tenantId": "tenant_1" }] },
+    "frank": { "roles": [{ "name": "admin", "tenantId": "tenant_2" }] },
     "george": { "roles": [] }
   },
   "tenants": {
