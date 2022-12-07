@@ -1,73 +1,45 @@
 {
-  "users": {
-    "alice": {
-      "roles": ["admin"],
-      "location": {
-        "country": "US",
-        "ip": "8.8.8.8"
+  "applications": {
+    "123": {
+      "creator": "alice",
+      "page_id": 3,
+      "status": 500,
+      "reviewers": {
+        "bob": true,
+        "charlie": true
+      },
+      "files": {
+        "uuid-1234.pdf": { "official": true },
+        "uuid-2345.pdf": { "draft": true },
+        "uuid-3456.pdf": { "draft": true, "official": true }
       }
     },
-    "bob": {
-      "roles": ["employee", "billing"],
-      "location": {
-        "country": "US",
-        "ip": "8.8.8.8"
-      }
-    },
-    "eve": {
-      "roles": ["customer"],
-      "location": {
-        "country": "US",
-        "ip": "8.8.8.8"
+    "234": {
+      "creator": "denise",
+      "page_id": 1,
+      "status": 1,
+      "reviewers": {
+        "bob": true,
+        "charlie": true
+      },
+      "files": {
+        "uuid-3456.pdf": { "official": true },
+        "uuid-4567.pdf": { "draft": true }
       }
     }
   },
-  "role_permissions": {
-    "customer": [
-      {
-        "action": "read",
-        "type": "dog"
-      },
-      {
-        "action": "read",
-        "type": "cat"
-      },
-      {
-        "action": "adopt",
-        "type": "dog"
-      },
-      {
-        "action": "adopt",
-        "type": "cat"
+  "roles": {
+    "eric": { "roles": [{ "name": "admin", "tenantId": null }] },
+    "frank": { "roles": [{ "name": "admin", "tenantId": "tenant_1" }] },
+    "george": { "roles": [] }
+  },
+  "tenants": {
+    "tenant_1": {
+      "rules": {
+        "admin": { "GetData": true, "WriteData": true },
+        "reviewer": { "GetData": true }
       }
-    ],
-    "employee": [
-      {
-        "action": "read",
-        "type": "dog"
-      },
-      {
-        "action": "read",
-        "type": "cat"
-      },
-      {
-        "action": "update",
-        "type": "dog"
-      },
-      {
-        "action": "update",
-        "type": "cat"
-      }
-    ],
-    "billing": [
-      {
-        "action": "read",
-        "type": "finance"
-      },
-      {
-        "action": "update",
-        "type": "finance"
-      }
-    ]
+    },
+    "tenant_2": {}
   }
 }
